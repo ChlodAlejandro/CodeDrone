@@ -6,7 +6,7 @@ public class DronePropeller : MonoBehaviour
 {
 
     private int id;
-    public double maxThrust;
+    public float maxThrust;
     public string propellerName = "";
 
     private DroneController controller;
@@ -53,5 +53,9 @@ public class DronePropeller : MonoBehaviour
         Gizmos.DrawLine(transform.position, transform.position + (transform.up * Thrust));
     }
 
+    public void SetThurst(float newThrust)
+    {
+        _thrust = Mathf.Clamp(newThrust, 0, maxThrust);
+    }
 
 }

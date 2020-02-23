@@ -25,8 +25,11 @@ public class DroneController : MonoBehaviour
 
     private WindController wind;
     private Rigidbody rb;
-    private DroneMovementMode mode = DroneMovementMode.Stabilize;
-    private TiltMode tilt = TiltMode.BodyTilt;
+    private DroneMovementMode lastMode;
+    private DroneMovementMode mode;
+    private TiltMode tilt;
+
+    private Vector3 propellerStabilizationFactor = new Vector3(0, 0, 0);
 
     bool GetDependencies()
     {
@@ -56,15 +59,36 @@ public class DroneController : MonoBehaviour
 
     void FixedUpdate()
     {
+        
         switch (mode)
         {
             case DroneMovementMode.Stabilize:
                 {
                     if (tilt == TiltMode.BodyTilt)
                     {
-                        Vector3 sv = GetStabilityVector();
-
-
+                        // vertical stabilization
+                        foreach (DronePropeller propeller in propellers)
+                        {
+                            Debug.Log((-rb.velocity.y) + "|" + (-Physics.gravity.y) + "|" + propellerStabilizationFactor.y);
+                            if (Mathf.Round(rb.velocity.y * 100) / 100 < 0.0)
+                            {
+                                propellerStabilizationFactor =
+                                    new Vector3(
+                                        propellerStabilizationFactor.x,
+                                        propellerStabilizationFactor.y + ((propeller.maxThrust / 16) * Time.fixedDeltaTime),
+                                        propellerStabilizationFactor.z);
+                            }
+                            else
+                            {
+                                propellerStabilizationFactor =
+                                    new Vector3(
+                                        propellerStabilizationFactor.x,
+                                        propellerStabilizationFactor.y - ((propeller.maxThrust / 16) * Time.fixedDeltaTime),
+                                        propellerStabilizationFactor.z);
+                            }
+                            float stableThrust = propellerStabilizationFactor.y;
+                            propeller.SetThurst(stableThrust);
+                        }
                     }
                     break;
                 }
@@ -90,6 +114,8 @@ public class DroneController : MonoBehaviour
             Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, rb.velocity.y, 0));
             Gizmos.color = Color.blue;
             Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, 0, rb.velocity.z));
+            Gizmos.color = Color.black;
+            Gizmos.DrawSphere(transform.position + GetStabilityVector(), 0.1f);
         }
     }
 
